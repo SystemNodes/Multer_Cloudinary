@@ -5,7 +5,8 @@ const {
     oneProduct,
     addProductImages,
     deleteProduct,
-    replaceProductImage
+    replaceProductImage,
+    replaceMultipleImages
 } = require('../controllers/productController');
 const upload = require('../middleware/multer');
 
@@ -14,7 +15,7 @@ router.get('/product', allProducts);
 router.get('/product', oneProduct);
 router.delete('/product/:id', deleteProduct);
 router.post('/product/:id/images', upload.array('images', 5), addProductImages);
-router.put("/product:id/images/:imageId", upload.single("image"), replaceProductImage);
-
+router.put('/product/:id/images/:imageId', upload.single('images'), replaceProductImage);
+router.put('/product/:id/images/replace_multiple', upload.array('images', 5), replaceMultipleImages);
 
 module.exports = router;

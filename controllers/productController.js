@@ -106,7 +106,7 @@ exports.deleteProduct = async (req, res) => {
     }
 };
 
-//1. Addind new product images, while retaining the others
+// 1. Addind new product images, while retaining the others
 exports.addProductImages = async (req, res) => {
     const file = req.file;
 
@@ -154,7 +154,7 @@ exports.addProductImages = async (req, res) => {
     }
 };
 
-// Replace a particular image in the product images, while retaining other
+// 2. Replace a particular image in the product images, while retaining other
 exports.replaceProductImage = async (req, res) => {
     const file = req.file;
 
@@ -174,12 +174,11 @@ exports.replaceProductImage = async (req, res) => {
         const uploadResult = await cloudinary.uploader.upload(file.path, {
             folder: "Multer_Cloudinary/producty"
         });
+
         fs.unlink(file.path, () => {});
 
-        const newImage = {
-            url: uploadResult.secure_url,
-            publicId: uploadResult.public_id
-        };
+        image.url = uploadResult.secure_url;
+        image.publicId = uploadResult.public_id;
 
         await product.save();
 
@@ -189,14 +188,73 @@ exports.replaceProductImage = async (req, res) => {
         });
         
     } catch (error) {
-       if (file && file.path) {
-        fs.unlink(file.path, (error)=>{
+        if (file && file.path) {
+            fs.unlink(file.path, (error)=>{
             console.log("Error deleteing local file", error);
-        });
-       }
+            });
+        }
 
-       res.status(500).json({
-        error: error.message
-       });
+        res.status(500).json({
+            error: error.message
+        });
     }
+};
+
+// 3. Replace multiple images, while retaining the ones not specified
+exports.replaceMultipleImages = async (req, res) => {
+    const files = req.files;
+
+    try {
+        const {id} = req.params;
+        const checkIds = req.body.imageIds
+        const imageIds = Array.isArray(checkIds) ? checkIds : [checkIds];
+
+        const product = await productModel.findById(id);
+        if (!product) {
+            return res.status(400).json({
+                message: "Product nor found"
+            });
+        }
+        if (!files || files.length === 0 || imageId.length === 0) {
+            return res.status(400).json({
+                message: "Please provide images"
+            });
+        }
+
+        for (const [i, file] of files.entries()) {
+            const imageId = imageIds[i];
+
+            const existingImage = product.images.find(img=>img.publicId===imageId);
+
+            await cloudinary.uploader.destroy(existingImage.publicId);
+
+            const uploadResult = await cloudinary.uploader.upload(file.path, {
+                folder: "Multer_Cloudinary/products"
+            });
+
+            fs.unlink(file.path, () => {});
+
+            existingImage.url = uploadResult.secure_url;
+            existingImage.publicId = uploadResult.public_id;
+        }
+
+        await product.save();
+
+        res.status(200).json({
+            message: "Image replaced successfully",
+            images: product.images
+        });
+
+    } catch (error) {
+        if (file && file.path) {
+            fs.unlink(file.path, (error)=>{
+                console.log("Error deleteing local file", error);
+            });
+        }
+        
+        res.status(500).json({
+            error: error.message
+        }); 
+    }
+
 };
