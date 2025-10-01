@@ -11,7 +11,7 @@ exports.addProduct = async (req, res) => {
 
         for (const image of files){
             const result = await cloudinary.uploader.upload(image.path, {
-                folder: "Multer_Cloudinary/producty"
+                folder: "Multer_Cloudinary/product"
             });
 
             const fileInfo = {
